@@ -169,7 +169,7 @@ def add_residual_block(
     ) else 1
 
     # transformation blob
-    tr = globals()[cfg.RESNETS.TRANS_FUNC](
+    tr = globals()[cfg.RESNETS.TRANS_FUNC.decode()](
         model,
         blob_in,
         dim_in,

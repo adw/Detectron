@@ -122,7 +122,7 @@ def get_func(func_name):
     function in this module or the path to a function relative to the base
     'modeling' module.
     """
-    if func_name == '':
+    if func_name == '' or func_name == b'':
         return None
     new_func_name = modeling.name_compat.get_new_name(func_name)
     if new_func_name != func_name:
@@ -132,7 +132,11 @@ def get_func(func_name):
         )
         func_name = new_func_name
     try:
-        parts = func_name.split('.')
+        try:
+            fn = func_name.decode()
+        except AttributeError:
+            fn = func_name
+        parts = fn.split('.')
         # Refers to a function in this module
         if len(parts) == 1:
             return globals()[parts[0]]

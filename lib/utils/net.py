@@ -20,13 +20,14 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from collections import OrderedDict
-import cPickle as pickle
+from six.moves import cPickle as pickle
+
 import logging
 import numpy as np
 import os
 import pprint
 import yaml
+from collections import OrderedDict
 
 from caffe2.python import core
 from caffe2.python import workspace
@@ -53,8 +54,8 @@ def initialize_gpu_0_from_weights_file(model, weights_file):
     """
     logger.info('Loading from: {}'.format(weights_file))
     ws_blobs = workspace.Blobs()
-    with open(weights_file, 'r') as f:
-        src_blobs = pickle.load(f)
+    with open(weights_file, 'rb') as f:
+        src_blobs = pickle.load(f, encoding='latin1')
     if 'cfg' in src_blobs:
         saved_cfg = yaml.load(src_blobs['cfg'])
         configure_bbox_reg_weights(model, saved_cfg)

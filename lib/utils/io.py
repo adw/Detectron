@@ -28,9 +28,12 @@ import re
 import sys
 import urllib
 
+from six import string_types
+from six.moves import urllib
+
 logger = logging.getLogger(__name__)
 
-_DETECTRON_S3_BASE_URL = 'https://s3-us-west-2.amazonaws.com/detectron'
+_DETECTRON_S3_BASE_URL = 'https://s3-us-west-2.amazonaws.com/detectron'.encode("ascii")
 
 
 def save_object(obj, file_name):
@@ -45,12 +48,22 @@ def cache_url(url_or_file, cache_dir):
     path to the cached file. If the argument is not a URL, simply return it as
     is.
     """
-    is_url = re.match(rb'^(?:http)s?://', url_or_file, re.IGNORECASE) is not None
+    # url_or_file can be either a string or bytes.
+    # URLs are (by definition) ASCII, so decode strings to bytes
+    # appropriately.
+    if isinstance(url_or_file, string_types):
+        uf = url_or_file.encode('ascii')
+    elif isinstance(url_or_file, bytes):
+        uf = url_or_file
+    else:
+        raise TypeError("url_or_file %s is neither basestring nor bytes",
+                        url_or_file)
+    is_url = re.match(rb'^(?:http)s?://', uf, re.IGNORECASE) is not None
 
     if not is_url:
-        return url_or_file
+        return uf
 
-    url = url_or_file
+    url = uf
     assert url.startswith(_DETECTRON_S3_BASE_URL), \
         ('Detectron only automatically caches URLs in the Detectron S3 '
          'bucket: {}').format(_DETECTRON_S3_BASE_URL)
@@ -111,8 +124,8 @@ def download_url(
     Credit:
     https://stackoverflow.com/questions/2028517/python-urllib2-progress-hook
     """
-    response = urllib2.urlopen(url)
-    total_size = response.info().getheader('Content-Length').strip()
+    response = urllib.request.urlopen(url.decode("ascii"))
+    total_size = response.info().get('Content-Length').strip()
     total_size = int(total_size)
     bytes_so_far = 0
 
@@ -132,13 +145,13 @@ def download_url(
 def _get_file_md5sum(file_name):
     """Compute the md5 hash of a file."""
     hash_obj = hashlib.md5()
-    with open(file_name, 'r') as f:
+    with open(file_name, 'rb') as f:
         hash_obj.update(f.read())
     return hash_obj.hexdigest()
 
 
 def _get_reference_md5sum(url):
     """By convention the md5 hash for url is stored in url + '.md5sum'."""
-    url_md5sum = url + '.md5sum'
-    md5sum = urllib2.urlopen(url_md5sum).read().strip()
-    return md5sum
+    url_md5sum = url.decode('ascii') + '.md5sum'
+    md5sum = urllib.request.urlopen(url_md5sum).read().strip()
+    return md5sum.decode('ascii')

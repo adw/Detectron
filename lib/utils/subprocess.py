@@ -28,6 +28,8 @@ import yaml
 import numpy as np
 import subprocess
 
+from io import IOBase
+
 from six.moves import shlex_quote
 from six.moves import cPickle as pickle
 
@@ -91,12 +93,16 @@ def process_in_parallel(tag, total_range_size, binary, output_dir):
     outputs = []
     for i, p, start, end, subprocess_stdout in processes:
         log_subprocess_output(i, p, output_dir, tag, start, end)
-        if isinstance(subprocess_stdout, file):  # NOQA (Python 2 for now)
-            subprocess_stdout.close()
+        try:
+            if isinstance(subprocess_stdout, file):  # NOQA (Python 2 for now)
+                subprocess_stdout.close()
+        except NameError:  # python 3
+            if isinstance(subprocess_stdout, IOBase):
+                subprocess_stdout.close()
         range_file = os.path.join(
             output_dir, '%s_range_%s_%s.pkl' % (tag, start, end)
         )
-        range_data = pickle.load(open(range_file))
+        range_data = pickle.load(open(range_file, "rb"), encoding='latin1')
         outputs.append(range_data)
     return outputs
 

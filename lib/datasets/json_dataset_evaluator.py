@@ -94,7 +94,6 @@ def _coco_segms_results_one_category(json_dataset, boxes, segms, cat_id):
     for i, image_id in enumerate(image_ids):
         dets = boxes[i]
         rles = segms[i]
-
         if isinstance(dets, list) and len(dets) == 0:
             continue
 
@@ -104,7 +103,7 @@ def _coco_segms_results_one_category(json_dataset, boxes, segms, cat_id):
         results.extend(
             [{'image_id': image_id,
               'category_id': cat_id,
-              'segmentation': rles[k],
+              'segmentation': {"size": rles[k]["size"], "counts": rles[k]["counts"].decode()},
               'score': scores[k]}
               for k in range(dets.shape[0])])
 
